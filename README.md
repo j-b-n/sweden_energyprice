@@ -18,12 +18,12 @@ This `plugin` allows you to fetch Swedish energy prices from [Elpriset just nu.s
 ### Installation
 Install by navigating to your Domoticz plugin folder (example: /home/pi/domoticz/plugins).
 ````
-git clone https://github.com/j-b-n/domoticz_reolink
+git clone https://github.com/j-b-n/sweden_energyprice
 sudo python3 -m pip install -r requirements.txt --upgrade
 ````
 
 ### Update
-Update an installed plugin by enter in the plugin install folder (example: /home/pi/domoticz/plugins/domoticz_reolink).
+Update an installed plugin by enter in the plugin install folder (example: /home/pi/domoticz/plugins/sweden_energyprice).
 ````
 git pull
 sudo python3 -m pip install -r requirements.txt --upgrade
