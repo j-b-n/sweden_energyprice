@@ -8,13 +8,6 @@
           <a href="https://www.elprisetjustnu.se">Elpriset just nu.se</a>
         </p>
 
-
-        <h2>Parameters</h2><br/>
-        <ul style="list-style-type:square">
-            <li>Region</li>
-            <li>Debug - Debug setting.</li>
-        </ul>
-        <br/>
     </description>
 
     <params>
@@ -25,6 +18,13 @@
                 <option label="SE2" value="SE2" default="false"/>
                 <option label="SE3" value="SE3" default="true"/>
                 <option label="SE4" value="SE4" default="false"/>
+            </options>
+        </param>
+
+       <param field="Mode2" label="Display values in öre" width="70px">
+            <options>
+                <option label="Yes" value="Yes" default="true"/>
+                <option label="No" value="No" />
             </options>
         </param>
 
@@ -66,6 +66,8 @@ class BasePlugin:
         if Parameters["Mode1"] == '':
             Parameters["Mode1"] = 'SE1'
 
+        self.cents = Parameters["Mode2"]
+
         if Parameters["Mode6"] == '':
             Parameters["Mode6"] = 0
         if Parameters["Mode6"] != "0":
@@ -76,6 +78,9 @@ class BasePlugin:
         Domoticz.Heartbeat(30)
 
         self.unit = "Kr"
+        if self.cents == "Yes":
+            self.unit = "öre"
+
         self.folder = Parameters["HomeFolder"] + 'json/'
         self.price_zone = Parameters["Mode1"]
 
@@ -112,19 +117,27 @@ class BasePlugin:
 
 
         min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            min_price = round(min_price * 100,4)
         update_device("MinElectricityPrice", Unit=1, sValue=str(min_price), nValue=0)
         Domoticz.Log("Update minimum energy price to "+str(min_price)+" at plugin start")
 
         max_price = elprisetjustnu.get_max_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            max_price = round(max_price * 100,4)
         update_device("MaxElectricityPrice", Unit=1, sValue=str(max_price), nValue=0)
         Domoticz.Log("Update maximum energy price to "+str(max_price)+" at plugin start")
 
         avg_price = elprisetjustnu.get_avg_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            avg_price = round(avg_price * 100,4)
         update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
         Domoticz.Log("Update average energy price to "+str(avg_price)+" at plugin start")
 
         for hour in range(24):
             hour_price = elprisetjustnu.get_hour_energy_price(self.folder, self.price_zone, hour)
+            if self.cents == "Yes":
+                hour_price = round(hour_price * 100,4)
             update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
             Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" at plugin start")
 
@@ -138,14 +151,20 @@ class BasePlugin:
 
         if hour == 0 and self.daily_prices_updated is False:
             min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
+            if self.cents == "Yes":
+                min_price = round(min_price * 100,4)
             update_device("MinElectricityPrice", Unit=1, sValue=str(min_price), nValue=0)
             Domoticz.Log("Update minimum energy price to "+str(min_price))
 
             max_price = elprisetjustnu.get_max_energy_price(self.folder, self.price_zone)
+            if self.cents == "Yes":
+                max_price = round(max_price * 100,4)
             update_device("MaxElectricityPrice", Unit=1, sValue=str(max_price), nValue=0)
             Domoticz.Log("Update maximum energy price to "+str(max_price))
 
             avg_price = elprisetjustnu.get_avg_energy_price(self.folder, self.price_zone)
+            if self.cents == "Yes":
+                avg_price = round(avg_price * 100,4)
             update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
             Domoticz.Log("Update average energy price to "+str(avg_price))
 
@@ -154,6 +173,8 @@ class BasePlugin:
 
         if minute < 59 and self.current_price_updated is False:
             current_price = elprisetjustnu.get_current_energy_price(self.folder, self.price_zone)
+            if self.cents == "Yes":
+                current_price = round(current_price * 100,4)
             update_device("CurrentElectricityPrice", Unit=1, sValue=str(current_price), nValue=0)
             Domoticz.Log("Update current energy price to "+str(current_price))
             self.current_price_updated = True
