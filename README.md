@@ -30,6 +30,14 @@ git pull
 sudo python3 -m pip install -r requirements.txt --upgrade
 ````
 
+### Testing
+To test that you get the json files etc. Depending on how you run Domoticz you might need to run the test as root.
+
+````
+cd /home/pi/domoticz/plugins/sweden_energyprice
+sudo python3 test.py
+````
+
 ## Acknowledgment
 Swedish energy prices from [Elpriset just nu.se](https://www.elprisetjustnu.se).
 
