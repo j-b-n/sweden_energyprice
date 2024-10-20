@@ -35,8 +35,7 @@ def clean_folder(foldername, price_zone):
         filename = foldername+f
         if os.path.isfile(filename):
             if filename != filename_today:
-                #os.remove(filename)
-                print(filename)
+                os.remove(filename)
 
 def update_energy_price(folder, price_zone):
     """Update the energy price for price_zone."""
