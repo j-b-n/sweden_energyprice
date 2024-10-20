@@ -55,7 +55,6 @@ from datetime import datetime, timedelta
 import elprisetjustnu
 
 class BasePlugin:
-    current_price_updated = False
 
     def __init__(self):
         self.current_price_updated = False

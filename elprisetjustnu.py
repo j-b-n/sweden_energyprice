@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, date, time
 import requests
 import pytz
 from dateutil import parser
+from pathlib import Path
 
 def write_to_file(filename, json_object):
     """Write json_object to filename"""
@@ -42,6 +43,8 @@ def update_energy_price(folder, price_zone):
     #https://www.elprisetjustnu.se/api/v1/prices/2024/08-08_SE3.json
 
     filename = get_filename_today(folder, price_zone)
+
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
     if os.path.exists(filename):
         prices = load_file(filename)
