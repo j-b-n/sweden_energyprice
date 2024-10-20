@@ -61,28 +61,28 @@ def update_energy_price(folder, price_zone):
 def get_min_energy_price(folder, price_zone):
     """ Get the minimum eneregy price!"""
     prices = update_energy_price(folder, price_zone)
-    min = 1000000
+    _min = 1000000
     for price in prices:
-        if price["SEK_per_kWh"] < min:
-            min = price["SEK_per_kWh"]
-    return min
+        if price["SEK_per_kWh"] < _min:
+            _min = price["SEK_per_kWh"]
+    return _min
 
 def get_max_energy_price(folder, price_zone):
     """ Get the maxmimum eneregy price!"""
     prices = update_energy_price(folder, price_zone)
-    max = -1000000
+    _max = -1000000
     for price in prices:
-        if price["SEK_per_kWh"] > max:
-            max = price["SEK_per_kWh"]
-    return max
+        if price["SEK_per_kWh"] > _max:
+            _max = price["SEK_per_kWh"]
+    return _max
 
 def get_avg_energy_price(folder, price_zone):
     """ Get the average eneregy price!"""
     prices = update_energy_price(folder, price_zone)
-    avg = 0
+    _avg = 0
     for price in prices:
-        avg += price["SEK_per_kWh"]
-    return round(avg/24,2)
+        _avg += price["SEK_per_kWh"]
+    return round(_avg/24,2)
 
 def get_current_energy_price(folder, price_zone):
     """ Get the current eneregy price!"""
