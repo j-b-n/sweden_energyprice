@@ -168,6 +168,13 @@ class BasePlugin:
             update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
             Domoticz.Log("Update average energy price to "+str(avg_price))
 
+            for hour in range(24):
+                hour_price = elprisetjustnu.get_hour_energy_price(self.folder, self.price_zone, hour)
+                if self.cents == "Yes":
+                    hour_price = round(hour_price * 100,4)
+                    update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
+                    Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" at midnight")
+
             self.daily_prices_updated = True
 
 
