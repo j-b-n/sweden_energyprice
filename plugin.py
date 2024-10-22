@@ -89,7 +89,10 @@ class BasePlugin:
         if os.path.isfile(Parameters["HomeFolder"]+'/EnergyPrice.zip'):
             if 'EnergyPrice' not in Images:
                 Domoticz.Image('EnergyPrice.zip').Create()
-            self.ImageID = Images["EnergyPrice"].ID
+            if 'EnergyPrice' in Images:
+                self.ImageID = Images["EnergyPrice"].ID
+            else:
+                Domoticz.Log("EnergyPrice icons not loaded!")
 
 
         if (len(Devices) != 28):
