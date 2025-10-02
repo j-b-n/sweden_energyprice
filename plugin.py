@@ -1,5 +1,6 @@
 """
-<plugin key="SwedenEnergyPrice" name="Energy prices in Sweden" author="jbn" version="0.0.1" externallink="https://github.com/j-b-n">
+<plugin key="SwedenEnergyPrice" name="Energy prices in Sweden" 
+ author="jbn" version="0.0.1" externallink="https://github.com/j-b-n">
     <description>
         <br/>
         <h2>Energy prices in Sweden</h2><br/>
@@ -47,20 +48,23 @@
 ##
 # Plugin
 ##
-import DomoticzEx as Domoticz
-from decimal import Decimal
-import time
 import os
-from datetime import datetime, timedelta
+import json
+from datetime import datetime
+import DomoticzEx as Domoticz
 import elprisetjustnu
 
 class BasePlugin:
+    """Plugin for the Sweden Energy Price plugin.
+    """
 
     def __init__(self):
         self.current_price_updated = False
         self.daily_prices_updated = False
 
     def onStart(self):
+        """Start the plugin and initialize necessary components.
+        """
         global _plugin
 
         if Parameters["Mode1"] == '':
@@ -86,16 +90,22 @@ class BasePlugin:
 
         Domoticz.Log("Energy region set to "+self.price_zone)
 
-        if os.path.isfile(Parameters["HomeFolder"]+'/EnergyPrice.zip'):
+        # default ImageID to 0 so it's always defined
+        self.ImageID = 0
+        image_zip = Parameters["HomeFolder"] + '/EnergyPrice.zip'
+        if os.path.isfile(image_zip):
             if 'EnergyPrice' not in Images:
-                Domoticz.Image('EnergyPrice.zip').Create()
+                try:
+                    Domoticz.Image('EnergyPrice.zip').Create()
+                except Exception:
+                    Domoticz.Log("Failed to create EnergyPrice image from zip")
             if 'EnergyPrice' in Images:
                 self.ImageID = Images["EnergyPrice"].ID
             else:
                 Domoticz.Log("EnergyPrice icons not loaded!")
 
 
-        if (len(Devices) != 28):
+        if len(Devices) != 28:
             if "CurrentElectricityPrice" not in Devices:
                 Domoticz.Unit(Name="Current Electricity Price",DeviceID="CurrentElectricityPrice",
                               Unit=1, Type=243, Subtype=31, Used=1, Image=(self.ImageID),
@@ -144,13 +154,12 @@ class BasePlugin:
             update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
             Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" at plugin start")
 
-
-
-
     def onHeartbeat(self):
+        """Handle heartbeat events.
+        """
         Domoticz.Debug("onHeartbeat called")
-        hour = (datetime.now().hour)
-        minute = (datetime.now().minute)
+        hour = datetime.now().hour
+        minute = datetime.now().minute
 
         if hour == 0 and self.daily_prices_updated is False:
             min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
@@ -189,12 +198,14 @@ class BasePlugin:
             Domoticz.Log("Update current energy price to "+str(current_price))
             self.current_price_updated = True
 
-        if minute == 59 and self.current_price_updated is True:
+        if (minute == 14 or minute == 29 or minute == 44 or minute == 59) and self.current_price_updated is True:
             self.current_price_updated = False
             if hour == 23:
                 self.daily_prices_updated = False
 
     def onStop(self):
+        """Stop the plugin and perform any necessary cleanup.
+        """
         Domoticz.Log("onStop called")
 
 
@@ -225,9 +236,9 @@ def update_device(ID, Unit = 1, sValue= 0, nValue = 0, TimedOut = 0, AlwaysUpdat
             if sValue == None:
                 sValue = Devices[ID].Units[Unit].sValue
             Devices[ID].Units[Unit].sValue = str(sValue)
-            if type(sValue) == int or type(sValue) == float:
+            if isinstance(sValue, (int, float)):
                 Devices[ID].Units[Unit].LastLevel = sValue
-            elif type(sValue) == dict:
+            elif isinstance(sValue, dict):
                 Devices[ID].Units[Unit].Color = json.dumps(sValue)
             Devices[ID].Units[Unit].nValue = nValue
             Devices[ID].TimedOut = TimedOut
