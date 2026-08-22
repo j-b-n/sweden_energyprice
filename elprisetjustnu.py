@@ -16,7 +16,7 @@ def write_to_file(filename, json_object):
     """Write json_object to filename"""
     with open(filename, "w", encoding="utf-8") as outfile:
         outfile.write(json_object)
-    os.chmod(filename, 0o640)
+    os.chmod(filename, 0o644)
 
 def load_file(filename):
     """load filename and return json_object."""
