@@ -122,8 +122,8 @@ def get_current_energy_price(folder, price_zone):
     if not prices:
         return 0
 
-    # Prefer timezone-aware datetimes from the API entries; fall back to CET
-    now = datetime.now(pytz.timezone('CET'))
+    # Prefer timezone-aware datetimes from the API entries; fall back to Swedish time
+    now = datetime.now(pytz.timezone('Europe/Stockholm'))
 
     for price in prices:
         try:
@@ -135,9 +135,9 @@ def get_current_energy_price(folder, price_zone):
 
         # ensure both are timezone-aware
         if time_start.tzinfo is None:
-            time_start = pytz.timezone('CET').localize(time_start)
+            time_start = pytz.timezone('Europe/Stockholm').localize(time_start)
         if time_end.tzinfo is None:
-            time_end = pytz.timezone('CET').localize(time_end)
+            time_end = pytz.timezone('Europe/Stockholm').localize(time_end)
 
         if time_start <= now < time_end:
             logger.debug(
@@ -158,7 +158,7 @@ def get_hour_energy_price(folder, price_zone, hour):
     if not prices:
         return 0
 
-    tz = pytz.timezone('CET')
+    tz = pytz.timezone('Europe/Stockholm')
     today = date.today()
     hour_datetime = datetime.combine(today, time()) + timedelta(hours=hour)
     hour_datetime = tz.localize(hour_datetime)
