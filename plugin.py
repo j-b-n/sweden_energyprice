@@ -50,7 +50,7 @@
 ##
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import DomoticzEx as Domoticz
 import elprisetjustnu
 
@@ -61,6 +61,68 @@ class BasePlugin:
     def __init__(self):
         self.current_price_updated = False
         self.daily_prices_updated = False
+        self.tomorrow_prices_updated = False
+        self.tomorrow_schedule_date = None
+        self.next_tomorrow_attempt = None
+
+    def _update_daily_prices(self, log_suffix):
+        min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            min_price = round(min_price * 100,4)
+        update_device("MinElectricityPrice", Unit=1, sValue=str(min_price), nValue=0)
+        Domoticz.Log("Update minimum energy price to "+str(min_price)+" "+log_suffix)
+
+        max_price = elprisetjustnu.get_max_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            max_price = round(max_price * 100,4)
+        update_device("MaxElectricityPrice", Unit=1, sValue=str(max_price), nValue=0)
+        Domoticz.Log("Update maximum energy price to "+str(max_price)+" "+log_suffix)
+
+        avg_price = elprisetjustnu.get_avg_energy_price(self.folder, self.price_zone)
+        if self.cents == "Yes":
+            avg_price = round(avg_price * 100,4)
+        update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
+        Domoticz.Log("Update average energy price to "+str(avg_price)+" "+log_suffix)
+
+        for hour in range(24):
+            hour_price = elprisetjustnu.get_hour_energy_price(self.folder, self.price_zone, hour)
+            if self.cents == "Yes":
+                hour_price = round(hour_price * 100,4)
+            update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
+            Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" "+log_suffix)
+
+    def _prepare_tomorrow_schedule(self, now):
+        if self.tomorrow_schedule_date == now.date():
+            return
+
+        self.tomorrow_schedule_date = now.date()
+        self.tomorrow_prices_updated = False
+        start_time = now.replace(hour=13, minute=0, second=0, microsecond=0)
+        if now < start_time:
+            self.next_tomorrow_attempt = start_time
+        else:
+            self.next_tomorrow_attempt = now.replace(
+                minute=(now.minute // 15) * 15, second=0, microsecond=0)
+
+    def _try_update_tomorrow_prices(self, now, force=False):
+        self._prepare_tomorrow_schedule(now)
+
+        if self.tomorrow_prices_updated or (not force and now < self.next_tomorrow_attempt):
+            return
+
+        tomorrow = now.date() + timedelta(days=1)
+        prices = elprisetjustnu.update_energy_price(
+            self.folder, self.price_zone, target_date=tomorrow)
+        if prices:
+            self.tomorrow_prices_updated = True
+            self.next_tomorrow_attempt = None
+            Domoticz.Log("Tomorrow's energy prices loaded")
+            return
+
+        self.next_tomorrow_attempt += timedelta(minutes=15)
+        while self.next_tomorrow_attempt <= now:
+            self.next_tomorrow_attempt += timedelta(minutes=15)
+        Domoticz.Log("Tomorrow's energy prices are not available yet")
 
     def onStart(self):
         """Start the plugin and initialize necessary components.
@@ -129,64 +191,22 @@ class BasePlugin:
                                   Options={'Custom':'0;'+self.unit}).Create()
 
 
-        min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
-        if self.cents == "Yes":
-            min_price = round(min_price * 100,4)
-        update_device("MinElectricityPrice", Unit=1, sValue=str(min_price), nValue=0)
-        Domoticz.Log("Update minimum energy price to "+str(min_price)+" at plugin start")
-
-        max_price = elprisetjustnu.get_max_energy_price(self.folder, self.price_zone)
-        if self.cents == "Yes":
-            max_price = round(max_price * 100,4)
-        update_device("MaxElectricityPrice", Unit=1, sValue=str(max_price), nValue=0)
-        Domoticz.Log("Update maximum energy price to "+str(max_price)+" at plugin start")
-
-        avg_price = elprisetjustnu.get_avg_energy_price(self.folder, self.price_zone)
-        if self.cents == "Yes":
-            avg_price = round(avg_price * 100,4)
-        update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
-        Domoticz.Log("Update average energy price to "+str(avg_price)+" at plugin start")
-
-        for hour in range(24):
-            hour_price = elprisetjustnu.get_hour_energy_price(self.folder, self.price_zone, hour)
-            if self.cents == "Yes":
-                hour_price = round(hour_price * 100,4)
-            update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
-            Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" at plugin start")
+        self._update_daily_prices("at plugin start")
+        now = datetime.now()
+        self._try_update_tomorrow_prices(now, force=now.hour >= 13)
 
     def onHeartbeat(self):
         """Handle heartbeat events.
         """
         Domoticz.Debug("onHeartbeat called")
-        hour = datetime.now().hour
-        minute = datetime.now().minute
+        now = datetime.now()
+        hour = now.hour
+        minute = now.minute
+
+        self._try_update_tomorrow_prices(now)
 
         if hour == 0 and self.daily_prices_updated is False:
-            min_price = elprisetjustnu.get_min_energy_price(self.folder, self.price_zone)
-            if self.cents == "Yes":
-                min_price = round(min_price * 100,4)
-            update_device("MinElectricityPrice", Unit=1, sValue=str(min_price), nValue=0)
-            Domoticz.Log("Update minimum energy price to "+str(min_price))
-
-            max_price = elprisetjustnu.get_max_energy_price(self.folder, self.price_zone)
-            if self.cents == "Yes":
-                max_price = round(max_price * 100,4)
-            update_device("MaxElectricityPrice", Unit=1, sValue=str(max_price), nValue=0)
-            Domoticz.Log("Update maximum energy price to "+str(max_price))
-
-            avg_price = elprisetjustnu.get_avg_energy_price(self.folder, self.price_zone)
-            if self.cents == "Yes":
-                avg_price = round(avg_price * 100,4)
-            update_device("AvgElectricityPrice", Unit=1, sValue=str(avg_price), nValue=0)
-            Domoticz.Log("Update average energy price to "+str(avg_price))
-
-            for hour in range(24):
-                hour_price = elprisetjustnu.get_hour_energy_price(self.folder, self.price_zone, hour)
-                if self.cents == "Yes":
-                    hour_price = round(hour_price * 100,4)
-                    update_device("Hour"+str(hour)+"-ElectricityPrice", Unit=1, sValue=str(hour_price), nValue=0)
-                    Domoticz.Log("Hour-"+str(hour)+" updated to "+str(hour_price)+" at midnight")
-
+            self._update_daily_prices("at midnight")
             self.daily_prices_updated = True
 
 

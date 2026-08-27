@@ -8,6 +8,8 @@
 ### Description
 
 This `plugin` allows you to fetch Swedish energy prices from [Elpriset just nu.se](https://www.elprisetjustnu.se).
+It caches both today's and tomorrow's price files. From 13:00, it retries fetching tomorrow's prices every 15 minutes until they are available.
+Failed requests for the same file are throttled to one attempt every five minutes, even when several values are requested during plugin startup.
 
 
 ### Prerequisites
